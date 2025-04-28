@@ -1,0 +1,910 @@
+<script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+        return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                    row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                    headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+    }
+</script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chetan Aneja - Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #121212;
+            color: #FFFFFF;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        nav {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a {
+            color: #FFFFFF;
+            margin: 0 1rem;
+            text-decoration: none;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #1DB954;
+        }
+
+        .hero {
+            height: 100vh;
+            background: linear-gradient(135deg, #181818 0%, #121212 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #1DB954;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .hero img:hover {
+            transform: scale(1.05);
+            border-color: #FFFFFF;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1DB954;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            font-size: 1.1rem;
+            color: #B3B3B3;
+        }
+
+        .social-links a {
+            margin: 0 0.5rem;
+            color: #FFFFFF;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #1DB954;
+            transform: scale(1.2);
+        }
+
+        .social-links svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+
+        section {
+            padding: 3rem 0;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #1DB954;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .skill-card {
+            background-color: #212121;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .skill-card:hover {
+            transform: scale(1.02);
+        }
+
+        .skill-card h4 {
+            color: #1DB954;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .skill-card ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        .skill-card li {
+            color: #B3B3B3;
+            margin-bottom: 0.5rem;
+        }
+
+        .project,
+        .training,
+        .achievement,
+        .cert-item {
+            background-color: #212121;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .project:hover,
+        .training:hover,
+        .achievement:hover,
+        .cert-item:hover {
+            transform: scale(1.02);
+        }
+
+        .project h3,
+        .training h3 {
+            color: #FFFFFF;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .project p,
+        .training p,
+        .cert-item p {
+            color: #B3B3B3;
+        }
+
+        .project-images,
+        .cert-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #181818, #1DB954);
+            color: #FFFFFF;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #1DB954, #181818);
+        }
+
+        #resume {
+            text-align: center;
+        }
+
+        #resume .download-btn {
+            margin-top: 1rem;
+        }
+
+        .inline-img,
+        .project-img,
+        .cert-img {
+            width: 150px;
+            height: auto;
+            border-radius: 5px;
+            border: 1px solid transparent;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .inline-img:hover,
+        .project-img:hover,
+        .cert-img:hover {
+            transform: scale(1.05);
+            border-color: #1DB954;
+        }
+
+        a {
+            color: #1DB954;
+            text-decoration: none;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        a:hover {
+            color: #FFFFFF;
+            transform: scale(1.05);
+        }
+
+        footer {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        footer p {
+            color: #B3B3B3;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero h2 {
+                font-size: 1.2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero img {
+                width: 120px;
+                height: 120px;
+            }
+
+            nav a {
+                margin: 0 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .container {
+                padding: 3rem 1rem;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            .project,
+            .training,
+            .cert-item {
+                padding: 1rem;
+            }
+
+            .inline-img,
+            .project-img,
+            .cert-img {
+                width: 120px;
+            }
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #121212;
+            color: #FFFFFF;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        nav {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a {
+            color: #FFFFFF;
+            margin: 0 1rem;
+            text-decoration: none;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #1DB954;
+        }
+
+        .hero {
+            padding-top: 250px;
+            text-align: center;
+        }
+
+        /* increased padding */
+        .hero img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #1DB954;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .hero img:hover {
+            transform: scale(1.05);
+            border-color: #FFFFFF;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1DB954;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            font-size: 1.1rem;
+            color: #B3B3B3;
+        }
+
+        .social-links a {
+            margin: 0 0.5rem;
+            color: #FFFFFF;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #1DB954;
+            transform: scale(1.2);
+        }
+
+        .social-links svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        footer {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        footer p {
+            color: #B3B3B3;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #121212;
+            color: #FFFFFF;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        nav {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a {
+            color: #FFFFFF;
+            margin: 0 1rem;
+            text-decoration: none;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #1DB954;
+        }
+
+        .hero {
+            padding-top: 250px;
+            text-align: center;
+        }
+
+        /* increased padding */
+        .hero img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #1DB954;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .hero img:hover {
+            transform: scale(1.05);
+            border-color: #FFFFFF;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1DB954;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            font-size: 1.1rem;
+            color: #B3B3B3;
+        }
+
+        .social-links a {
+            margin: 0 0.5rem;
+            color: #FFFFFF;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #1DB954;
+            transform: scale(1.2);
+        }
+
+        .social-links svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        footer {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        footer p {
+            color: #B3B3B3;
+            margin-bottom: 0.5rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #121212;
+            color: #FFFFFF;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        nav {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a {
+            color: #FFFFFF;
+            margin: 0 1rem;
+            text-decoration: none;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #1DB954;
+        }
+
+        .hero {
+            padding-top: 250px;
+            text-align: center;
+        }
+
+        /* increased padding */
+        .hero img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #1DB954;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .hero img:hover {
+            transform: scale(1.05);
+            border-color: #FFFFFF;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1DB954;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            font-size: 1.1rem;
+            color: #B3B3B3;
+        }
+
+        .social-links a {
+            margin: 0 0.5rem;
+            color: #FFFFFF;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #1DB954;
+            transform: scale(1.2);
+        }
+
+        .social-links svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        footer {
+            background-color: #181818;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        footer p {
+            color: #B3B3B3;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+
+</head>
+
+<body>
+    <nav>
+        <a href="#profile">Profile</a>
+        <a href="#skills">Skills & Technologies</a>
+        <a href="#projects">Projects</a>
+        <a href="#certifications">Certifications & Courses</a>
+        <a href="#trainings">Internships & Trainings</a>
+        <a href="#achievements">Competitions & Achievements</a>
+        <a href="#resume">Resume</a>
+    </nav>
+    <section id="profile" class="hero">
+        <div class="hero-content">
+            <img src="media/profile-picture.jpg" alt="Chetan Aneja">
+            <h1>Chetan Aneja</h1>
+            <h2>DevOps and Cloud Computing Enthusiast</h2>
+            <p><strong>About Me:</strong> Hi, I’m Chetan Aneja, a B.Tech Computer Science student at Lovely Professional
+                University, with a specialization in DevOps and Cloud Computing. I focus on building scalable,
+                cloud-native solutions and have hands-on experience in automating infrastructure and streamlining
+                software delivery. My technical toolkit includes containerization with Docker, continuous integration
+                and delivery using Jenkins, and the implementation of robust CI/CD pipelines. I am passionate about
+                modern DevOps practices and cloud infrastructure, and I actively seek to stay at the forefront of
+                emerging technologies in this rapidly evolving ecosystem.</p>
+            <p>📞 Contact Me: +91-9781936255 | 📧 Email: chetananeja1417@gmail.com</p>
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/chetan-aneja" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFFFFF">
+                        <path
+                            d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-1.337-.027-3.063-1.867-3.063-1.872 0-2.159 1.461-2.159 2.971v5.696h-3v-11h2.879v1.497h.041c.401-.757 1.381-1.557 2.841-1.557 3.038 0 3.6 2 3.6 4.604v6.456z" />
+                    </svg>
+                </a>
+                <a href="https://github.com/chetan1417" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFFFFF">
+                        <path
+                            d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <section id="skills">
+            <h2>Skills & Technologies</h2>
+            <div class="skills-grid">
+                <div class="skill-card">
+                    <h4>Programming Languages</h4>
+                    <ul>
+                        <li>Python (Intermediate)<br /><img src="./media/python.png" alt="Python Logo"
+                                class="inline-img"></li>
+                        <li>Java (Intermediate)<br /><img src="./media/java.png" alt="Java Logo" class="inline-img">
+                        </li>
+                        <li>C++ (Beginner)<br /><img src="./media/cpp.png" alt="C++ Logo" class="inline-img"></li>
+                        <li>JavaScript (Beginner)<br /><img src="./media/javascript.png" alt="JavaScript Logo"
+                                class="inline-img"></li>
+                    </ul>
+                </div>
+                <div class="skill-card">
+                    <h4>Frontend Development</h4>
+                    <ul>
+                        <li>HTML5 (Intermediate)<br /><img src="./media/html.png" alt="HTML5 Logo" class="inline-img">
+                        </li>
+                        <li>CSS3 (Intermediate)<br /><img src="./media/css.png" alt="CSS3 Logo" class="inline-img"></li>
+                    </ul>
+                </div>
+                <div class="skill-card">
+                    <h4>Cloud</h4>
+                    <ul>
+                        <li>AWS (Intermediate)<br /><img src="./media/aws.png" alt="AWS Logo" class="inline-img">
+                        </li>
+                        <li>Azure (Intermediate)<br /><img src="./media/azure.png" alt="Azure Logo" class="inline-img">
+                        </li>
+                    </ul>
+                </div>
+                <div class="skill-card">
+                    <h4>DevOps</h4>
+                    <ul>
+                        <li>GitHub (Intermediate)<br /><img src="./media/github.png" alt="GitHub Logo"
+                                class="inline-img"></li>
+                        <li>Docker (Intermediate)<br /><img src="./media/docker.png" alt="Docker Logo"
+                                class="inline-img"></li>
+                        <li>Apache CloudStack (Intermediate)<br /><img src="./media/apache.png"
+                                alt="Apache CloudStack Logo" class="inline-img"></li>
+                    </ul>
+                </div>
+                <div class="skill-card">
+                    <h4>Databases</h4>
+                    <ul>
+                        <li>MySQL (Intermediate)<br /><img src="media/Mysql.jpg.png" alt="MySQL Logo"
+                                class="inline-img">
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects">
+            <h2>Projects</h2>
+            <div class="project">
+                <h3>Handwritten Digit Classification</h3>
+                <p>Designed and implemented an AI model for handwritten digit classification using the MNIST dataset,
+                    applying both machine learning and deep learning techniques. The project began by evaluating
+                    multiple machine learning models, including Logistic Regression, SVM, and Random Forest, to assess
+                    their performance in recognizing handwritten digits. After testing these models, I transitioned to
+                    developing a Convolutional Neural Network (CNN) using TensorFlow, which achieved a test accuracy of
+                    98%. To thoroughly evaluate the model’s performance, I employed confusion matrices and visualized
+                    the results using accuracy and loss plots, ensuring a detailed understanding of the model's
+                    strengths and areas for improvement.</p>
+                <p><strong>Tech:</strong> Python, TensorFlow, Machine Learning, Deep Learning</p>
+                <p>
+                    <a href="https://github.com/chetan1417" target="_blank">View on GitHub</a>
+                </p>
+                <div class="project-images">
+                    <img src="./media/h1.png" alt="Project Image 1" class="project-img">
+                    <img src="./media/h2.png" alt="Project Image 2" class="project-img">
+                </div>
+            </div>
+            <div class="project">
+                <h3>Netflix Clone – Loading Page UI</h3>
+                <p>Developed a responsive Netflix clone loading page that closely replicates the visual design of
+                    Netflix's original interface. The page features a dark-themed layout with a centered loading
+                    animation, delivering a clean and modern user experience. Emphasis was placed on pixel-perfect
+                    design and responsiveness across various screen sizes. The project showcases front-end development
+                    skills and attention to visual detail. For deployment, the project was successfully hosted on both
+                    Azure and AWS sandbox environments, ensuring accessibility, scalability, and hands-on experience
+                    with cloud platforms.</p>
+                <p><strong>Tech:</strong> HTML, CSS, Bootstrap, AWS (EC2, S3), Microsoft Azure, GitHub</p>
+                <p>
+                    <a href="https://github.com/chetan1417" target="_blank">View on GitHub</a>
+                </p>
+            </div>
+            <div class="project">
+                <h3>Python Quiz</h3>
+                <p><em>October 2023 - November 2023</em></p>
+                <p>Built an interactive quiz application with multiple-choice questions and score tracking. Created a
+                    user-friendly graphical interface, enhancing the user experience and making the application
+                    accessible. Implemented core logic to manage question presentation, answer validation, and score
+                    calculation, demonstrating strong problem-solving and programming skills.</p>
+                <p><strong>Tech:</strong> Python, Data Structures</p>
+                <p>
+                    <a href="https://github.com/chetan1417" target="_blank">View on GitHub</a>
+                </p>
+            </div>
+        </section>
+
+        <section id="certifications">
+            <h2>Certifications & Courses</h2>
+            <div class="cert-images">
+                <div class="cert-item">
+                    <p>IBM DevOps and Software Engineering – Coursera</p>
+                    <img src="./media/courseraibm.jpg" alt="IBM Certificate" class="cert-img">
+                </div>
+                <div class="cert-item">
+                    <p>Introduction to Industry 4.0 and Industrial Internet of Things – NPTEL</p>
+                    <img src="./media/nptel.jpg" alt="NPTEL Certificate" class="cert-img">
+                </div>
+                
+                <div class="cert-item">
+                    <p>Introduction to Large Language Models – Coursera</p>
+                    <img src="./media/coursera.png" alt="LLM Certificate" class="cert-img">
+                </div>
+                <div class="cert-item">
+                    <p>100 Days of Code: The Complete Python Pro Bootcamp for 2023 – Udemy</p>
+                    <img src="./media/udemy.png" alt="LLM Certificate" class="cert-img">
+                </div>
+            </div>
+            <p>
+                <a href="https://www.linkedin.com/in/chetan-aneja" target="_blank">View on LinkedIn</a>
+            </p>
+        </section>
+
+        <section id="trainings">
+            <h2>Internships & Trainings</h2>
+            <div class="training">
+                <h3>Data Structures and Algorithms – Training, CypherSchools</h3>
+                <p><em>January 2025 - February 2025</em></p>
+                <p>During this intensive training with CypherSchools, I deepened my understanding of fundamental data
+                    structures and algorithms, which are crucial for efficient problem-solving and software development.
+                    I explored a wide range of data structures, including arrays, linked lists, ArrayLists, queues,
+                    stacks, HashMaps, binary trees, and binary search trees (BST). Through hands-on practice, I tackled
+                    coding problems focused on searching and sorting algorithms, such as binary search, quicksort, and
+                    mergesort. This training not only strengthened my algorithmic thinking but also prepared me for
+                    technical interviews by building a solid foundation in designing and analyzing efficient solutions.
+                </p>
+                <p><strong>Tech stacks used:</strong> Arrays, Linked Lists, ArrayList, Queues, Stacks, HashMaps,
+                    Searching Algorithms, Sorting Algorithms, Binary Tree, Binary Search Tree (BST)</p>
+            </div>
+            <div class="training">
+                <h3>AI For Software Engineers – Summer Training, Programming Pathshala</h3>
+                <p><em>May 2024 - July 2024</em></p>
+                <p>As part of this summer training with Programming Pathshala, I honed my skills in Python programming
+                    and its applications in artificial intelligence. The program covered Python’s core syntax,
+                    object-oriented programming (OOP), and functional programming paradigms, enabling me to write clean,
+                    modular, and efficient code. I engaged in hands-on coding exercises that challenged me to solve
+                    real-world problems, enhancing my problem-solving capabilities. Additionally, I applied AI and data
+                    science concepts, such as building models with TensorFlow, to address practical challenges. This
+                    training bridged the gap between theoretical knowledge and practical application, equipping me with
+                    the skills to integrate AI techniques into software engineering projects.</p>
+                <p><strong>Tech stacks used:</strong> Python, TensorFlow, Object-Oriented Programming (OOP), Functional
+                    Programming, Data Structures & Algorithms</p>
+            </div>
+        </section>
+
+        <section id="achievements">
+            <h2>Competitions & Achievements</h2>
+            <div class="achievement">
+                <p>Gold Medallist in A-Level Sketching Competition (January 2024)</p>
+            </div>
+        </section>
+
+        <section id="resume">
+            <h2>Resume</h2>
+            <a href="https://drive.google.com/file/d/1c_vurdOa_t5fOUKf9E3vafmrxhYDVC4l/view?usp=sharing" download
+                class="download-btn">Download CV</a>
+        </section>
+    </div>
+
+    <footer>
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/chetan-aneja" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path
+                        d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-1.337-.027-3.063-1.867-3.063-1.872 0-2.159 1.461-2.159 2.971v5.696h-3v-11h2.879v1.497h.041c.401-.757 1.381-1.557 2.841-1.557 3.038 0 3.6 2 3.6 4.604v6.456z" />
+                </svg>
+            </a>
+            <a href="https://github.com/chetan1417" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFFFFF">
+                    <path
+                        d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                </svg>
+            </a>
+        </div>
+        <p>© 2025 Chetan Aneja</p>
+    </footer>
+</body>
+
+</html>
