@@ -18,9 +18,10 @@ pipeline {
                     bat '''
                         git config --global user.name "Jenkins CI"
                         git config --global user.email "jenkins@localhost"
+                        git checkout main
                         git remote set-url origin https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/chetan1417/Portfolio_website.git
                         git add .
-                        git commit -m "Auto-deploy from Jenkins"
+                        git commit -m "Auto-deploy from Jenkins" || echo "Nothing to commit"
                         git push origin main
                     '''
                 }
