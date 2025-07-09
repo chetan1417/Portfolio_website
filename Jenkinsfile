@@ -2,27 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/chetan1417/Portfolio_website.git'
-            }
-        }
-
         stage('Build') {
             steps {
-                echo 'No build step required for static portfolio project.'
+                echo 'No build step needed. This is a static portfolio website.'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Skipping tests (none present).'
+                echo 'No tests to run.'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Ready for deployment (add logic when ready).'
+                echo 'Deployment step placeholder.'
             }
         }
     }
