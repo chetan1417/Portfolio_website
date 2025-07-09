@@ -1,43 +1,28 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "chetan1417/portfolio-website"
-        IMAGE_TAG = "latest"
-    }
-
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                echo 'Skipping Git checkout (using local project folder)'
-                // For GitHub: git url: 'https://github.com/your/repo.git'
+                git 'https://github.com/chetan1417/Portfolio_website.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}", '.')
-                }
+                echo 'No build step required for static portfolio project.'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Test') {
             steps {
-                withDockerRegistry([credentialsId: 'dockerhub-creds', url: '']) {
-                    script {
-                        docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
-                    }
-                }
+                echo 'Skipping tests (none present).'
             }
         }
 
-        stage('Deploy with Docker Compose') {
+        stage('Deploy') {
             steps {
-                script {
-                    sh 'docker-compose down || true'
-                    sh 'docker-compose up -d'
-                }
+                echo 'Ready for deployment (add logic when ready).'
             }
         }
     }
