@@ -1,30 +1,23 @@
 pipeline {
-    agent any
-
-    environment {
-        GIT_CREDENTIALS_ID = 'chetan1417'
+    agent {
+        docker {
+            image 'node:14'  // or any base image you need
+        }
     }
 
     stages {
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'No build step needed for static portfolio website.'
+                script {
+                    def customImage = docker.build("chetan1417/portfolio-website")
+                }
             }
         }
 
-        stage('Deploy to GitHub Pages') {
+        stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    bat '''
-                        git config --global user.name "Jenkins CI"
-                        git config --global user.email "jenkins@localhost"
-                        git checkout main
-                        git remote set-url origin https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/chetan1417/Portfolio_website.git
-                        git add .
-                        git commit -m "Auto-deploy from Jenkins" || echo "Nothing to commit"
-                        git push origin main
-                    '''
-                }
+                echo 'Skipping actual push step for now.'
+                // Add docker login and push commands here if needed
             }
         }
     }
