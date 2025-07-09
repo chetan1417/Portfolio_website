@@ -15,10 +15,10 @@ pipeline {
         stage('Deploy to GitHub Pages') {
             steps {
                 withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIALS_ID}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    sh '''
+                    bat '''
                         git config --global user.name "Jenkins CI"
                         git config --global user.email "jenkins@localhost"
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/chetan1417/Portfolio_website.git
+                        git remote set-url origin https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/chetan1417/Portfolio_website.git
                         git add .
                         git commit -m "Auto-deploy from Jenkins"
                         git push origin main
