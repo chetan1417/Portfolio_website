@@ -1,25 +1,25 @@
 pipeline {
-    agent any  // or use: label 'your-agent-label'
+    agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred')
+        IMAGE_NAME = "chetan1417/portfolio-website"
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = sh(script: 'docker build -t chetan1417/portfolio-website .', returnStdout: true)
+                    docker.build("${IMAGE_NAME}")
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Login & Push to DockerHub') {
             steps {
-                script {
-                    sh """
-                        echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-                        docker push chetan1417/portfolio-website
+                withCredentials([usernamePassword(credentialsId: 'chetan', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                    bat """
+                        echo %DOCKERHUB_PASSWORD% | docker login -u %DOCKERHUB_USERNAME% --password-stdin
+                        docker push %IMAGE_NAME%
                     """
                 }
             }
