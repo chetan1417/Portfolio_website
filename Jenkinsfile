@@ -4,19 +4,26 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'No build step needed. This is a static portfolio website.'
+                echo 'Static site – no build step required.'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'No tests to run.'
+                echo 'No tests configured.'
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to GitHub Pages') {
             steps {
-                echo 'Deployment step placeholder.'
+                echo 'Deploying to GitHub Pages by committing to main branch.'
+                sh '''
+                    git config user.name "Jenkins CI"
+                    git config user.email "jenkins@localhost"
+                    git add .
+                    git commit -m "Auto-deployed from Jenkins"
+                    git push origin main
+                '''
             }
         }
     }
